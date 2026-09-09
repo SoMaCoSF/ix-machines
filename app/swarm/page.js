@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useStore } from "../../lib/store";
 import { coverage } from "../../lib/data";
 import { TYPE, IX_NS, mint } from "../../lib/gyst";
 
 export default function SwarmPage() {
-  const { agents, recipes, parts, openBuild, planShip, log, events, builds } = useStore();
+  const { agents, recipes, parts, openBuild, planShip, log, events, builds, scan } = useStore();
   const [running, setRunning] = useState(false);
   const [trace, setTrace] = useState([]);
   const run = async () => {
@@ -17,28 +18,48 @@ export default function SwarmPage() {
       setTrace([...steps]);
       log(agent, text);
     };
-    push("CATALOGER", `Pool holds ${parts.length} lots. All type 0x211 / ns 0x1A1.`);
-    await wait(280);
-    const ranked = recipes.map((r) => ({ r, c: coverage(r, parts) })).sort((a, b) => b.c.pct - a.c.pct);
-    push("MATCHER", `Ranked ${ranked.length} recipes. Top: ${ranked[0].r.name} at ${ranked[0].c.pct}%.`);
-    await wait(280);
-    const pick = ranked.find((x) => x.c.pct >= 70) || ranked[0];
-    push("DESIGNER", `Routing ${pick.r.name} → ${(pick.r.cad || []).join(", ")}. Constraint: no phantom SKUs.`);
-    await wait(280);
+    push("CATALOGER", `Pool holds ${parts.length} lots / ${scan.skus} SKUs.`);
+    await wait(220);
+    push("MATCHER", scan.headline);
+    await wait(220);
+    const pick = recipes.map((r) => ({ r, c: coverage(r, parts) })).sort((a, b) => b.c.pct - a.c.pct)[0];
+    push("DESIGNER", `Routing ${pick.r.name} → ${(pick.r.cad || []).join(", ")}.`);
+    await wait(220);
     const build = openBuild(pick.r);
     push("FOREMAN", `Build ${build.short} opened. Status ${build.status}.`);
-    await wait(280);
+    await wait(220);
     const ship = planShip(build);
-    push("SHIPPER", `Crate ${build.crate.slice(0, 8)} · ${ship.hops.length} hop(s) staged.`);
+    push("SHIPPER", `Crate ${build.crate.slice(0, 8)} · ${ship.hops.length} hop(s).`);
     setRunning(false);
   };
   return (
     <>
-      <div className="kicker">Vertex · type 0x500 · assimilation INGEST→REPORT</div>
+      <div className="kicker">watcher is live · MATCHER re-ranks on every ingest</div>
       <h1>Agent swarm</h1>
-      <p className="lead">Five named agents walk the lattice: catalog, match, design, open a project UUID, stage shipping labels.</p>
+      <p className="lead">Corpus in, scan out. {scan.headline}. Ready builds sit on the market until someone opens a project UUID.</p>
+      <div className="grid g3" style={{ marginBottom: 16 }}>
+        <div className="stat"><b>{scan.lots}</b><span>Lots</span></div>
+        <div className="stat"><b>{scan.ready.length}</b><span>Fully covered</span></div>
+        <div className="stat"><b>{scan.close.length}</b><span>Close (≥60%)</span></div>
+      </div>
       <div className="row" style={{ marginBottom: 18 }}>
         <button className="btn" type="button" onClick={run} disabled={running}>{running ? "Swarming…" : "Run swarm on live pool"}</button>
+        <Link className="btn ghost" href="/marketplace">Open market</Link>
+      </div>
+      <div className="card" style={{ marginBottom: 14 }}>
+        <h2>Matcher board</h2>
+        <table>
+          <thead><tr><th>Recipe</th><th>Cover</th><th>Missing</th></tr></thead>
+          <tbody>
+            {scan.ranked.map((r) => (
+              <tr key={r.recipeId}>
+                <td>{r.name}</td>
+                <td className={r.ready ? "tag ok" : r.pct >= 60 ? "tag warn" : "mono"}>{r.pct}%</td>
+                <td className="meta">{r.missing.map((m) => m.sku).join(", ") || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       <div className="grid g2">
         <div className="card">

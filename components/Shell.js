@@ -8,7 +8,7 @@ const LINKS = [
   ["/", "Deck"],
   ["/inventory", "Inventory"],
   ["/upload", "Ingest"],
-  ["/formats", "Formats"],
+  ["/sources", "Sheets"],
   ["/marketplace", "Market"],
   ["/swarm", "Swarm"],
   ["/ship", "Ship"],
