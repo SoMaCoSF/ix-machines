@@ -3,16 +3,29 @@ import Link from "next/link";
 import { useStore } from "../../lib/store";
 
 export default function ShipPage() {
-  const { shipments, builds, groups, planShip } = useStore();
+  const { shipments, builds, groups, planShip, moves, fillShorts } = useStore();
   const gName = (id) => groups.find((g) => g.id === id)?.name || id;
   return (
     <>
-      <div className="kicker">SHIPPER · type 0x221 shipment · 0x222 crate</div>
-      <h1>Labeled hops between benches.</h1>
-      <p className="lead">Every crate and every hop is a GYST UUID. Print the label, tape it to the extrusion, scan it at the next garage.</p>
-      {builds.length > 0 && (
-        <div className="row" style={{ marginBottom: 16 }}>
-          <button className="btn" type="button" onClick={() => planShip(builds[0])}>Stage hops for latest build</button>
+      <div className="kicker">SHIPPER · 0x221 hop · 0x222 crate · 0x223 inbound</div>
+      <h1>Sort the corpus. Fill what you lack.</h1>
+      <p className="lead">Bench-to-bench hops first. Partner packets only when a SKU is missing everywhere. Every hop is a UUID you can tape to a crate.</p>
+      <div className="row" style={{ marginBottom: 16 }}>
+        {builds.length > 0 && <button className="btn" type="button" onClick={() => planShip(builds[0])}>Stage bench hops</button>}
+        <button className="btn ghost" type="button" onClick={fillShorts}>Fill shorts via partners</button>
+        <Link className="btn ghost" href="/partners">Partner rails</Link>
+      </div>
+      {moves.length > 0 && (
+        <div className="card" style={{ marginBottom: 14 }}>
+          <h2>Sorter proposals</h2>
+          <table>
+            <thead><tr><th>SKU</th><th>From</th><th>To</th><th>Qty</th></tr></thead>
+            <tbody>
+              {moves.map((m, i) => (
+                <tr key={i}><td className="mono">{m.sku}</td><td>{gName(m.from)}</td><td>{gName(m.to)}</td><td>{m.qty}</td></tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
       {shipments.length === 0 && <p className="lead">No shipments yet. Open a build, then stage hops.</p>}

@@ -12,6 +12,8 @@ const LINKS = [
   ["/marketplace", "Market"],
   ["/swarm", "Swarm"],
   ["/ship", "Ship"],
+  ["/partners", "Partners"],
+  ["/rip", "RIP"],
 ];
 
 export default function Shell({ children }) {
